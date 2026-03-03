@@ -20,7 +20,7 @@ def get_base64_of_bin_file(bin_file):
     return None
 
 # Load background image
-bin_str = get_base64_of_bin_file('backimg.jpg') 
+bin_str = get_base64_of_bin_file('backimgm.jpg') 
 if bin_str:
     bg_img_style = f"url('data:image/jpg;base64,{bin_str}')"
 else:
