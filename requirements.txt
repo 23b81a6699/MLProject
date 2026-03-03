@@ -6,3 +6,4 @@ joblib
 librosa
 matplotlib
 seaborn
+plotly
