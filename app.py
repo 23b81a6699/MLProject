@@ -97,12 +97,13 @@ def extract_features(audio_file):
     danceability = np.mean(librosa.feature.spectral_flatness(y=y)) * 12
     valence = np.mean(librosa.feature.spectral_centroid(y=y, sr=sr)) / 5000 
 
+    # Use .item() to convert numpy scalars to python floats
     return {
-        "danceability": min(float(danceability), 1.0),
-        "energy": min(float(energy), 1.0),
-        "loudness": float(loudness),
-        "valence": min(float(valence), 1.0),
-        "tempo": float(tempo)
+        "danceability": min(float(np.array(danceability).item()), 1.0),
+        "energy": min(float(np.array(energy).item()), 1.0),
+        "loudness": float(np.array(loudness).item()),
+        "valence": min(float(np.array(valence).item()), 1.0),
+        "tempo": float(np.array(tempo).item())
     }
 
 # --- 4. UI ---
