@@ -6,7 +6,6 @@ import pandas as pd
 import base64
 import os
 import plotly.express as px  # New import for the pie chart
-import io  # Add this to your imports at the top!
 
 # --- 1. Page Configuration ---
 st.set_page_config(page_title="AI Music Classifier", page_icon="🎵", layout="wide")
@@ -20,7 +19,7 @@ def get_base64_of_bin_file(bin_file):
     return None
 
 # Load background image
-bin_str = get_base64_of_bin_file('backimgm.jpg') 
+bin_str = get_base64_of_bin_file('backimg1.jpg') 
 if bin_str:
     bg_img_style = f"url('data:image/jpg;base64,{bin_str}')"
 else:
@@ -90,32 +89,15 @@ def load_assets():
     mapping = joblib.load("models/mapping.pkl")
     return model, scaler, mapping
 
-import io  # Add this to your imports at the top!
-
 def extract_features(audio_file):
-    # Convert Streamlit UploadedFile to a readable BytesIO buffer
-    # This prevents the "Format not recognised" error
-    audio_data = io.BytesIO(audio_file.read())
-    
-    # 1. Load the audio from the buffer
-    # We use sr=None to keep the native sampling rate
-    y_full, sr_native = librosa.load(audio_data, sr=None)
-    duration = librosa.get_duration(y=y_full, sr=sr_native)
-    
-    # 2. Adaptive offset: start at 30s only if file is long enough
-    offset_val = 30 if duration > 35 else 0
-    
-    # To reload a specific segment from a buffer, we reset the buffer position
-    audio_data.seek(0)
-    y, sr = librosa.load(audio_data, duration=45, offset=offset_val)
-    
-    # --- Feature Extraction Logic ---
+    y, sr = librosa.load(audio_file, duration=45, offset=30)
     tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
     energy = np.mean(librosa.feature.rms(y=y)) * 5 
     loudness = np.mean(librosa.amplitude_to_db(np.abs(librosa.stft(y)), ref=np.max))
     danceability = np.mean(librosa.feature.spectral_flatness(y=y)) * 12
     valence = np.mean(librosa.feature.spectral_centroid(y=y, sr=sr)) / 5000 
 
+    # Use .item() to convert numpy scalars to python floats
     return {
         "danceability": min(float(np.array(danceability).item()), 1.0),
         "energy": min(float(np.array(energy).item()), 1.0),
