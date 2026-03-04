@@ -89,15 +89,33 @@ def load_assets():
     mapping = joblib.load("models/mapping.pkl")
     return model, scaler, mapping
 
+import io
+
 def extract_features(audio_file):
-    y, sr = librosa.load(audio_file, duration=45, offset=30)
+    # Read the file into a buffer so we can load it twice if needed
+    input_bytes = audio_file.read()
+    
+    # 1. First, load the full file (or just the header) to check duration
+    with io.BytesIO(input_bytes) as b:
+        # sr=None is faster as it avoids resampling just to check length
+        y_temp, sr_temp = librosa.load(b, sr=None)
+        duration = librosa.get_duration(y=y_temp, sr=sr_temp)
+
+    # 2. Decide on offset: 
+    # If song > 35s, start at 30s. Otherwise, start at 0s.
+    start_offset = 30 if duration > 35 else 0
+    
+    # 3. Load the actual segment for analysis
+    with io.BytesIO(input_bytes) as b:
+        y, sr = librosa.load(b, duration=45, offset=start_offset)
+    
+    # --- Feature Extraction Logic ---
     tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
     energy = np.mean(librosa.feature.rms(y=y)) * 5 
     loudness = np.mean(librosa.amplitude_to_db(np.abs(librosa.stft(y)), ref=np.max))
     danceability = np.mean(librosa.feature.spectral_flatness(y=y)) * 12
     valence = np.mean(librosa.feature.spectral_centroid(y=y, sr=sr)) / 5000 
 
-    # Use .item() to convert numpy scalars to python floats
     return {
         "danceability": min(float(np.array(danceability).item()), 1.0),
         "energy": min(float(np.array(energy).item()), 1.0),
